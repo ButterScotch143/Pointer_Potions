@@ -1,19 +1,38 @@
 #ifndef UI_H
 #define UI_H
 
+#include "raylib.h"
 #include "game.h"
 
-// ANSI Escape Codes for Terminal Colors
-#define ANSI_RESET   "\x1b[0m"
-#define ANSI_RED     "\x1b[31m"
-#define ANSI_BLUE    "\x1b[34m"
-#define ANSI_YELLOW  "\x1b[33m"
-#define ANSI_GREEN   "\x1b[32m"
-#define ANSI_MAGENTA "\x1b[35m"
+typedef enum {
+    UI_NONE,
+    UI_NEW_GAME,
+    UI_CONTINUE,
+    UI_INSTRUCTIONS,
+    UI_EXIT,
+    UI_BACK,
+    UI_HINT,
+    UI_UNDO,
+    UI_POWERUP,
+    UI_RESTART,
+    UI_MENU,
+    UI_NEXT_LEVEL,
+    UI_CONFIRM_RIDDLE,
+    UI_SKIP_RIDDLE,
+    UI_RIDDLE_WRONG
+} UIAction;
 
-// UI Function Prototypes (UI & Validation Engineer)
-void renderBoard(const GameState *game);
-void printMessage(const char *msg);
-int getValidVialInput(const char *prompt, int max_vials);
+void drawMainMenu(void);
+void drawInstructions(void);
+void drawGameScreen(const GameState *game, int selected_vial,
+                    int hint_from, int hint_to, const char *message,
+                    float animation_progress, int anim_from, int anim_to);
+void drawEndScreen(const GameState *game);
+void drawRiddleScreen(int selected_answer, const char *feedback);
+int getClickedVial(const GameState *game);
+UIAction getMenuAction(void);
+UIAction getGameAction(void);
+UIAction getEndAction(bool won);
+UIAction getRiddleAction(int *selected_answer);
 
-#endif // UI_H
+#endif
