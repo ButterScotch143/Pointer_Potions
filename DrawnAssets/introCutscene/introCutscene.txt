@@ -1,0 +1,11 @@
+This is meant to be implemented with raylib to appear alongside the cutscene pages
+
+01: It was a quiet, peaceful night...
+
+02: Inside a tower, a wizard was busy with their work...
+
+03: They were experimenting with different magical recipes for their potions.
+
+04: Everything was going smoothly, until...
+
+05: (no text)
