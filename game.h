@@ -51,6 +51,8 @@ typedef struct {
 
 
 /* GAME FUNCTIONS */
+int getLevelMoveLimit(int level);
+
 void init_game(GameState *game, int level);
 
 bool isValidMove(

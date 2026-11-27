@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include "ui.h"
@@ -18,6 +19,111 @@ static const Color UI_GOLD = {239, 190, 91, 255};
 static const Color CREAM = {247, 236, 211, 255};
 static const Color MUTED = {174, 163, 194, 255};
 
+static Texture2D titleArt;
+static bool titleArtLoaded = false;
+
+static Texture2D cutsceneTex[CUTSCENE_PAGES];
+static bool cutsceneLoaded = false;
+
+static const char *cutsceneText[CUTSCENE_PAGES] = {
+    "It was a quiet, peaceful night...",
+    "Inside a tower, a wizard was busy with their work...",
+    "They were experimenting with different magical recipes for their potions.",
+    "Everything was going smoothly, until...",
+    ""
+};
+
+/* -------------------------------------------------
+   FOR IMAGE ASSETS & CUTSCENES
+------------------------------------------------- */
+void unloadTitleArt(void)
+{
+    if (titleArtLoaded) UnloadTexture(titleArt);
+}
+
+
+/* -------------------------------------------------
+   RIDDLES
+------------------------------------------------- */
+
+typedef struct {
+    const char *question;
+    const char *answers[4];
+    int correctAnswer;
+} Riddle;
+
+static const Riddle riddles[] = {
+    {
+        "What has hands but cannot clap?",
+        {"A clock", "A robot", "A person", "A tree"},
+        0
+    },
+    {
+        "What has keys but no locks?",
+        {"A door", "A keyboard", "A box", "A car"},
+        1
+    },
+    {
+        "What gets wetter the more it dries?",
+        {"A towel", "A sponge", "A cloud", "A river"},
+        0
+    },
+    {
+        "What has a neck but no head?",
+        {"A snake", "A bottle", "A shirt", "A giraffe"},
+        1
+    },
+    {
+        "What has many teeth but cannot bite?",
+        {"A dog", "A comb", "A shark", "A zipper"},
+        1
+    },
+    {
+        "What goes up but never comes down?",
+        {"A balloon", "Smoke", "Your age", "An elevator"},
+        2
+    }, 
+    // --- ADD NEW RIDDLES BELOW ---
+    {
+        "I speak without a mouth and hear without ears. What am I?",
+        {"An echo", "A ghost", "The wind", "A shadow"},
+        0
+    },
+    {
+        "The more of this there is, the less you see. What is it?",
+        {"Fog", "Darkness", "Smoke", "Light"},
+        1
+    },
+    {
+        "What has cities, but no houses; forests, but no trees; and water, but no fish?",
+        {"A painting", "A dream", "A map", "A globe"},
+        2
+    },
+    {
+        "What can you break, even if you never pick it up or touch it?",
+        {"Glass", "A promise", "Silence", "A record"},
+        1
+    },
+    {
+        "I have branches, but no fruit, trunk, or leaves. What am I?",
+        {"A river", "A bank", "A library", "A family tree"},
+        1
+    }
+};
+
+#define RIDDLE_COUNT (sizeof(riddles) / sizeof(riddles[0]))
+
+static int currentRiddle = 0;
+
+void selectRandomRiddle(void)
+{
+    currentRiddle = rand() % RIDDLE_COUNT;
+}
+
+/* -------------------------------------------------
+   POTION COLORS
+------------------------------------------------- */
+
 static const Color POTION_COLORS[] = {
     {0, 0, 0, 0},
     {235, 76, 91, 255},
@@ -28,10 +134,6 @@ static const Color POTION_COLORS[] = {
     {238, 132, 65, 255}
 };
 
-/* -------------------------------------------------
-   COLOR AND BACKGROUND
-------------------------------------------------- */
-
 static Color potionColor(int id)
 {
     if (id < 1 || id > 6)
@@ -40,11 +142,14 @@ static Color potionColor(int id)
     return POTION_COLORS[id];
 }
 
+/* -------------------------------------------------
+   BACKGROUND
+------------------------------------------------- */
+
 static void drawBackground(void)
 {
     ClearBackground(BG);
 
-    // Stars
     for (int i = 0; i < 45; i++) {
         int x = (i * 173 + 37) % SCREEN_W;
         int y = (i * 97 + 23) % SCREEN_H;
@@ -56,10 +161,7 @@ static void drawBackground(void)
         );
     }
 
-    // Top accent
     DrawRectangle(0, 0, SCREEN_W, 6, UI_GOLD);
-
-    // Bottom accent
     DrawRectangle(0, SCREEN_H - 5, SCREEN_W, 5, PANEL);
 }
 
@@ -106,9 +208,6 @@ static bool button(Rectangle r, const char *label, bool highlighted)
     int width = MeasureText(label, font);
 
     Color textColor = highlighted ? BG : CREAM;
-
-    if (highlighted && !hover)
-        textColor = BG;
 
     DrawText(
         label,
@@ -184,7 +283,6 @@ static void drawVial(
         x, y, VIAL_W, VIAL_H
     };
 
-    // Hint highlight
     if (hinted) {
         DrawRectangleRounded(
             (Rectangle){x - 7, y - 7, VIAL_W + 14, VIAL_H + 35},
@@ -193,7 +291,6 @@ static void drawVial(
         );
     }
 
-    // Selection highlight
     if (selected) {
         DrawRectangleRounded(
             (Rectangle){x - 8, y - 8, VIAL_W + 16, VIAL_H + 36},
@@ -210,14 +307,7 @@ static void drawVial(
         (Color){210, 225, 255, 24}
     );
 
-    DrawRectangleRoundedLines(
-        glass,
-        0.18f,
-        12,
-        selected ? SKYBLUE : (Color){195, 207, 231, 210}
-    );
-
-    // Liquid
+    // Liquid layers
     for (int slot = 0; slot <= vial->top_idx && slot < 4; slot++) {
 
         float liquidH = 39.0f;
@@ -232,24 +322,74 @@ static void drawVial(
             liquidH - 2
         };
 
+        Color liquidColor = potionColor(vial->slots[slot]);
+
         DrawRectangleRounded(
             liquid,
             0.12f,
-            5,
-            potionColor(vial->slots[slot])
+            8,
+            liquidColor
         );
+
+        // Animated liquid surface
+        if (slot == vial->top_idx) {
+
+            float waveTime = (float)GetTime() * 3.0f;
+
+            for (int i = 0; i < 20; i++) {
+
+                float px1 = lx + i * 3.0f;
+                float px2 = px1 + 3.0f;
+
+                float py1 = ly + sinf(waveTime + i * 0.35f) * 2.0f;
+                float py2 = ly + sinf(waveTime + (i + 1) * 0.35f) * 2.0f;
+
+                DrawLineEx(
+                    (Vector2){px1, py1},
+                    (Vector2){px2, py2},
+                    3.0f,
+                    Fade(WHITE, 0.45f)
+                );
+            }
+
+            // Bubbles
+            DrawCircleV(
+                (Vector2){
+                    lx + 20 + sinf(waveTime) * 5,
+                    ly + 22 + sinf(waveTime * 1.5f) * 5
+                },
+                2.5f,
+                Fade(WHITE, 0.45f)
+            );
+
+            DrawCircleV(
+                (Vector2){
+                    lx + 45 + cosf(waveTime) * 4,
+                    ly + 12 + cosf(waveTime * 1.3f) * 4
+                },
+                2.0f,
+                Fade(WHITE, 0.35f)
+            );
+        }
 
         // Liquid reflection
         DrawRectangle(
             (int)lx + 4,
-            (int)ly + 4,
+            (int)ly + 6,
             5,
-            (int)liquidH - 12,
-            (Color){255, 255, 255, 45}
+            (int)liquidH - 14,
+            Fade(WHITE, 0.25f)
         );
     }
 
-    // Bottom glass line
+    // Glass outline
+    DrawRectangleRoundedLines(
+        glass,
+        0.18f,
+        12,
+        selected ? SKYBLUE : (Color){195, 207, 231, 210}
+    );
+
     DrawLine(
         (int)(x + 5),
         (int)(y + VIAL_H - 3),
@@ -282,14 +422,30 @@ void drawMainMenu(void)
 {
     drawBackground();
 
-    titleText("THE ALCHEMY LAB | A LIQUID SORTING PUZZLE");
+    if (!titleArtLoaded)
+    {
+        titleArt = LoadTexture("DrawnAssets/TitleArt.png");
+        SetTextureFilter(titleArt, TEXTURE_FILTER_BILINEAR);
+        titleArtLoaded = true;
+    }
 
-    DrawText(
-        "Sort every potion. Master the art of alchemy.",
-        380, 185, 22, MUTED
+    float scale = 0.7f;
+    float artW = titleArt.width * scale;
+    DrawTextureEx(
+        titleArt,
+        (Vector2){ (SCREEN_W - artW) / 2.0f, 12 },
+        0.0f, scale, WHITE
     );
 
-    // Menu panel
+    const char *sub = "THE ALCHEMY LAB | A LIQUID SORTING PUZZLE";
+    int subW = MeasureText(sub, 19);
+    DrawText(sub, (SCREEN_W - subW) / 2, 190, 19, CREAM);
+
+    DrawText(
+        "Sort every potion. Master the art of alchemy!",
+        380, 215, 22, MUTED
+    );
+
     drawPanel((Rectangle){415, 245, 450, 390});
 
     float x = 465;
@@ -374,6 +530,114 @@ void drawInstructions(void)
 }
 
 /* -------------------------------------------------
+   LIQUID POURING ANIMATION
+------------------------------------------------- */
+
+static void drawLiquidStream(
+    float sx,
+    float sy,
+    float tx,
+    float ty,
+    Color liquidColor,
+    float progress
+)
+{
+    float time = (float)GetTime();
+
+    float cx = (sx + tx) / 2.0f;
+    float cy = sy - 75.0f;
+
+    Vector2 previous = {sx, sy};
+
+    // Curved liquid stream
+    for (int i = 1; i <= 35; i++) {
+
+        float t = (float)i / 35.0f;
+
+        if (t > progress)
+            break;
+
+        float inv = 1.0f - t;
+
+        float wave = sinf(time * 12.0f + t * 18.0f) * 2.5f;
+
+        Vector2 current = {
+            inv * inv * sx + 2 * inv * t * cx + t * t * tx + wave,
+            inv * inv * sy + 2 * inv * t * cy + t * t * ty
+        };
+
+        float thickness =
+            8.0f + sinf(t * 20.0f + time * 8.0f) * 1.5f;
+
+        DrawLineEx(
+            previous,
+            current,
+            thickness,
+            liquidColor
+        );
+
+        DrawLineEx(
+            previous,
+            current,
+            2.0f,
+            Fade(WHITE, 0.45f)
+        );
+
+        previous = current;
+    }
+
+    // Moving droplets
+    for (int i = 0; i < 12; i++) {
+
+        float t = fmodf(
+            time * 1.4f + i * 0.085f,
+            1.0f
+        );
+
+        if (t > progress)
+            continue;
+
+        float inv = 1.0f - t;
+
+        float wave = sinf(time * 10.0f + i) * 3.0f;
+
+        Vector2 drop = {
+            inv * inv * sx + 2 * inv * t * cx + t * t * tx + wave,
+            inv * inv * sy + 2 * inv * t * cy + t * t * ty
+        };
+
+        float radius = 2.0f + (i % 3);
+
+        DrawCircleV(drop, radius, liquidColor);
+        DrawCircleV(drop, radius * 0.4f, Fade(WHITE, 0.65f));
+    }
+
+    // Splash effect
+    if (progress > 0.75f) {
+
+        float splashProgress = (progress - 0.75f) / 0.25f;
+
+        for (int i = 0; i < 8; i++) {
+
+            float angle = i * 0.785398f;
+
+            float distance = splashProgress * 17.0f;
+
+            Vector2 splash = {
+                tx + cosf(angle) * distance,
+                ty + sinf(angle) * distance
+            };
+
+            DrawCircleV(
+                splash,
+                2.5f * (1.0f - splashProgress * 0.4f),
+                liquidColor
+            );
+        }
+    }
+}
+
+/* -------------------------------------------------
    GAME SCREEN
 ------------------------------------------------- */
 
@@ -421,6 +685,7 @@ void drawGameScreen(
     float spacing = getVialSpacing(n);
     float startX = getVialStartX(n);
 
+    // Draw all vials
     for (int i = 0; i < n; i++) {
 
         bool hinted =
@@ -436,28 +701,46 @@ void drawGameScreen(
         );
     }
 
-    // Pour animation
+    // Realistic liquid pouring
     if (
         animation_progress > 0.0f &&
         anim_from >= 0 &&
         anim_to >= 0 &&
         anim_from < n &&
         anim_to < n
-    ) {
-        float sx = startX + anim_from * (VIAL_W + spacing) + VIAL_W / 2;
-        float tx = startX + anim_to * (VIAL_W + spacing) + VIAL_W / 2;
+    )
+    {
+        float sx = startX +
+            anim_from * (VIAL_W + spacing) + VIAL_W / 2;
 
-        float sy = VIAL_Y + 35;
-        float ty = VIAL_Y + 35;
+        float tx = startX +
+            anim_to * (VIAL_W + spacing) + VIAL_W / 2;
 
-        float px = sx + (tx - sx) * animation_progress;
+        float direction = (tx > sx) ? 1.0f : -1.0f;
 
-        float py =
-            sy + (ty - sy) * animation_progress
-            - 65.0f * sinf(animation_progress * 3.14159f);
+        int top = game->vials[anim_from].top_idx;
 
-        DrawCircleV((Vector2){px, py}, 12, UI_GOLD);
-        DrawCircleV((Vector2){px, py}, 6, CREAM);
+        if (top >= 0 && top < VIAL_CAPACITY) {
+
+            Color liquidColor = potionColor(
+                game->vials[anim_from].slots[top]
+            );
+
+            float sourceX = sx + direction * 20.0f;
+            float sourceY = VIAL_Y + 8.0f;
+
+            float targetX = tx - direction * 5.0f;
+            float targetY = VIAL_Y + 12.0f;
+
+            drawLiquidStream(
+                sourceX,
+                sourceY,
+                targetX,
+                targetY,
+                liquidColor,
+                animation_progress
+            );
+        }
     }
 
     // Instructions / feedback
@@ -503,10 +786,12 @@ void drawGameScreen(
         "UNDO", false
     );
 
-    button(
-        (Rectangle){bx + 2 * (bw + gap), by, bw, bh},
-        "POWER-UP", true
-    );
+    bool canUsePowerup = (game->powerups_remaining > 0);
+   button(
+    (Rectangle){bx + 2 * (bw + gap), by, bw, bh},
+    canUsePowerup ? "POWER-UP" : "LOCKED",
+    canUsePowerup // Un-highlights the gold button when 0 left
+   );
 
     button(
         (Rectangle){bx + 3 * (bw + gap), by, bw, bh},
@@ -619,27 +904,12 @@ void drawRiddleScreen(
 
     drawPanel((Rectangle){230, 180, 820, 400});
 
-    DrawText(
-        "I have a face and two hands,",
-        330, 235, 25, CREAM
-    );
+    const Riddle *riddle = &riddles[currentRiddle];
 
     DrawText(
-        "but no arms or legs.",
-        330, 275, 25, CREAM
+        riddle->question,
+        300, 290, 25, WHITE
     );
-
-    DrawText(
-        "WHAT AM I?",
-        330, 330, 21, UI_GOLD
-    );
-
-    const char *answers[] = {
-        "A clock",
-        "A potion",
-        "A mirror",
-        "A book"
-    };
 
     for (int i = 0; i < 4; i++) {
 
@@ -670,7 +940,11 @@ void drawRiddleScreen(
         );
 
         DrawText(
-            TextFormat("%d. %s", i + 1, answers[i]),
+            TextFormat(
+                "%d. %s",
+                i + 1,
+                riddle->answers[i]
+            ),
             (int)r.x + 20,
             (int)r.y + 15,
             19,
@@ -737,6 +1011,63 @@ int getClickedVial(const GameState *game)
     }
 
     return -1;
+}
+
+/* -------------------------------------------------
+   INTRODUCTION CUTSCENE
+------------------------------------------------- */
+UIAction drawCutscene(int page)
+{
+    if (!cutsceneLoaded)
+    {
+        for (int i = 0; i < CUTSCENE_PAGES; i++)
+        {
+            char path[128];
+            sprintf(path, "DrawnAssets/introCutscene/introCutscene_%02d.png", i + 1);
+            cutsceneTex[i] = LoadTexture(path);
+            SetTextureFilter(cutsceneTex[i], TEXTURE_FILTER_BILINEAR);  // smoother when shrunk
+        }
+        cutsceneLoaded = true;
+    }
+
+    ClearBackground(BG);
+
+    float scale = 0.9f;
+    float imgW  = cutsceneTex[page].width * scale;
+    float imgX  = (SCREEN_W - imgW) / 2.0f;
+    float imgY  = 10.0f;
+    DrawTextureEx(cutsceneTex[page], (Vector2){ imgX, imgY }, 0.0f, scale, WHITE);
+
+    const char *text = cutsceneText[page];
+    if (text[0] != '\0')
+    {
+        int fs = 26;
+        int tw = MeasureText(text, fs);
+        DrawText(text, (SCREEN_W - tw) / 2, 595, fs, CREAM);
+    }
+
+    const char *counter = TextFormat("%d / %d", page + 1, CUTSCENE_PAGES);
+    DrawText(counter, (SCREEN_W - MeasureText(counter, 14)) / 2, 703, 14, MUTED);
+
+    UIAction result = UI_NONE;
+
+    if (page > 0 && button((Rectangle){40, 655, 140, 40}, "BACK", false))
+        result = UI_CUTSCENE_PREV;
+
+    if (button((Rectangle){1100, 25, 140, 40}, "SKIP", false))
+        result = UI_CUTSCENE_SKIP;
+
+    const char *nextLabel = (page == CUTSCENE_PAGES - 1) ? "BEGIN" : "NEXT";
+    if (button((Rectangle){1100, 655, 140, 40}, nextLabel, true))
+        result = UI_CUTSCENE_NEXT;
+
+    // Keyboard shortcuts (ESC is deliberately not used: raylib closes the window on it)
+    if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+        result = UI_CUTSCENE_NEXT;
+    if (page > 0 && IsKeyPressed(KEY_LEFT))
+        result = UI_CUTSCENE_PREV;
+
+    return result;
 }
 
 /* -------------------------------------------------
@@ -826,7 +1157,6 @@ UIAction getEndAction(bool won)
    RIDDLE ACTIONS
 ------------------------------------------------- */
 
-
 UIAction getRiddleAction(int *selected_answer)
 {
     const Rectangle answers[4] = {
@@ -836,17 +1166,18 @@ UIAction getRiddleAction(int *selected_answer)
         {650, 440, 280, 50}
     };
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    {
-        for (int i = 0; i < 4; i++)
-        {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+
+        for (int i = 0; i < 4; i++) {
+
             if (CheckCollisionPointRec(
                 GetMousePosition(),
-                answers[i]))
-            {
+                answers[i]
+            )) {
+
                 *selected_answer = i;
 
-                return (i == 0)
+                return (i == riddles[currentRiddle].correctAnswer)
                     ? UI_CONFIRM_RIDDLE
                     : UI_RIDDLE_WRONG;
             }
@@ -856,11 +1187,10 @@ UIAction getRiddleAction(int *selected_answer)
     if (button(
         (Rectangle){510, 645, 260, 45},
         "RETURN TO GAME",
-        false))
-    {
+        false
+    )) {
         return UI_SKIP_RIDDLE;
     }
 
     return UI_NONE;
 }
-
