@@ -15,6 +15,13 @@ static const int LEVEL_MOVES[MAX_LEVELS] = {
     10, 20, 25, 30, 35
 };
 
+int getLevelMoveLimit(int level)
+{
+    if (level < 1) level = 1;
+    if (level > MAX_LEVELS) level = MAX_LEVELS;
+    return LEVEL_MOVES[level - 1];
+}
+
 /* SHUFFLE */
 static void shuffle(int *values, int count)
 {
