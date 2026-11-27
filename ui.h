@@ -20,6 +20,9 @@ typedef enum {
     UI_CONFIRM_RIDDLE,
     UI_SKIP_RIDDLE,
     UI_RIDDLE_WRONG,
+    UI_STORY_NEXT,   // I added these
+    UI_STORY_SKIP,
+
     UI_CUTSCENE_PREV,
     UI_CUTSCENE_NEXT,
     UI_CUTSCENE_SKIP
@@ -42,5 +45,13 @@ UIAction drawCutscene(int page);
 UIAction getGameAction(void);
 UIAction getEndAction(bool won);
 UIAction getRiddleAction(int *selected_answer);
+
+//for the storyline
+void initStoryAssets(void);
+void unloadStoryAssets(void);
+void drawStoryScreen(int slideIndex, int visibleChars);
+int getStorySlideCount(void);
+int getStorySlideTextLength(int slideIndex);
+UIAction getStoryAction(void);
 
 #endif

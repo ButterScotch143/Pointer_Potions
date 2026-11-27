@@ -7,6 +7,7 @@
 #include "game.h"
 #include "ui.h"
 #include "storage.h"
+#include "host.h"
 
 typedef enum {
     SCREEN_MENU,
@@ -54,9 +55,23 @@ int main(void)
 
     init_game(&game, 1);
 
+    HostActor gameHost;
+    InitHost(&gameHost, 50, 500);
+
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+
+        //host
+        if (screen == SCREEN_GAME)
+        {
+            UpdateHost(&gameHost, dt);
+        }
+
+        //idkwhatthisis
+        gameHost.slideInY = 100.0f;
+        SetHostReaction(&gameHost, HOST_IDLE, "Let's sort these potions!");
+        screen = SCREEN_GAME;
 
         // Pour animation
         if (screen == SCREEN_GAME && animTimer > 0)
@@ -68,15 +83,22 @@ int main(void)
                 animTimer = 0;
 
                 if (makeMove(&game, animFrom, animTo))
-                {
-                    strcpy(message, "Potion transferred!");
-
-                    saveGameState(&game, saveFile);
-
-                    if (game.is_game_over)
                     {
-                        screen = SCREEN_END;
-                    }
+                        strcpy(message, "Potion transferred!");
+
+                        if (game.moves_remaining <= 3) {
+                                SetHostReaction(&gameHost, HOST_WORRIED, "Hurry! Very few moves left!");
+                                } else {
+                                SetHostReaction(&gameHost, HOST_HAPPY, "Great pour!");
+                                }
+
+                        saveGameState(&game, saveFile);
+
+                        if (game.is_game_over)
+                                {
+                                    screen = SCREEN_END;
+                                }
+                        }
                 }
 
                 selectedVial = -1;
@@ -199,6 +221,8 @@ int main(void)
                 animFrom,
                 animTo
             );
+
+            DrawHost(&gameHost);
 
             // Do not accept another move while pouring
             if (animTimer <= 0)
