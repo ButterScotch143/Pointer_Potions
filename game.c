@@ -52,9 +52,23 @@ int main(void)
 
     init_game(&game, 1);
 
+    HostActor gameHost;
+    InitHost(&gameHost, 50, 500);
+
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+
+        //host
+        if (screen == SCREEN_GAME)
+        {
+            UpdateHost(&gameHost, dt);
+        }
+
+        //idkwhatthisis
+        gameHost.slideInY = 100.0f;
+        SetHostReaction(&gameHost, HOST_IDLE, "Let's sort these potions!");
+        screen = SCREEN_GAME;
 
         // Pour animation
         if (screen == SCREEN_GAME && animTimer > 0)
@@ -176,6 +190,8 @@ int main(void)
                 animFrom,
                 animTo
             );
+
+            DrawHost(&gameHost);
 
             // Do not accept another move while pouring
             if (animTimer <= 0)
