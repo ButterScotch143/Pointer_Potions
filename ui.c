@@ -753,10 +753,12 @@ void drawGameScreen(
         "UNDO", false
     );
 
-    button(
-        (Rectangle){bx + 2 * (bw + gap), by, bw, bh},
-        "POWER-UP", true
-    );
+    bool canUsePowerup = (game->powerups_remaining > 0);
+   button(
+    (Rectangle){bx + 2 * (bw + gap), by, bw, bh},
+    canUsePowerup ? "POWER-UP" : "LOCKED",
+    canUsePowerup // Un-highlights the gold button when 0 left
+   );
 
     button(
         (Rectangle){bx + 3 * (bw + gap), by, bw, bh},
