@@ -11,6 +11,7 @@
 typedef enum {
     SCREEN_MENU,
     SCREEN_INSTRUCTIONS,
+    SCREEN_CUTSCENE,
     SCREEN_GAME,
     SCREEN_END,
     SCREEN_RIDDLE
@@ -32,6 +33,8 @@ int main(void)
     UndoState undo = {0};
 
     ScreenState screen = SCREEN_MENU;
+
+    int cutscenePage = 0;
 
     int selectedVial = -1;
     int hintFrom = -1;
@@ -105,7 +108,7 @@ int main(void)
 
                 strcpy(message, "Select a source vial, then a destination.");
 
-                screen = SCREEN_GAME;
+                screen = SCREEN_CUTSCENE;
             }
             else if (action == UI_CONTINUE)
             {
@@ -152,6 +155,27 @@ int main(void)
                 {
                     screen = SCREEN_MENU;
                 }
+            }
+        }
+
+        // Intro cutscene
+        else if (screen == SCREEN_CUTSCENE)
+        {
+            UIAction action = drawCutscene(cutscenePage);
+
+            if (action == UI_CUTSCENE_NEXT)
+            {
+                cutscenePage++;
+                if (cutscenePage >= CUTSCENE_PAGES)
+                    screen = SCREEN_GAME;
+            }
+            else if (action == UI_CUTSCENE_PREV)
+            {
+                if (cutscenePage > 0) cutscenePage--;
+            }
+            else if (action == UI_CUTSCENE_SKIP)
+            {
+                screen = SCREEN_GAME;
             }
         }
 

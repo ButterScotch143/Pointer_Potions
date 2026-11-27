@@ -19,8 +19,13 @@ typedef enum {
     UI_NEXT_LEVEL,
     UI_CONFIRM_RIDDLE,
     UI_SKIP_RIDDLE,
-    UI_RIDDLE_WRONG
+    UI_RIDDLE_WRONG,
+    UI_CUTSCENE_PREV,
+    UI_CUTSCENE_NEXT,
+    UI_CUTSCENE_SKIP
 } UIAction;
+
+#define CUTSCENE_PAGES 5
 
 void unloadTitleArt(void);
 void selectRandomRiddle(void);
@@ -33,6 +38,7 @@ void drawEndScreen(const GameState *game);
 void drawRiddleScreen(int selected_answer, const char *feedback);
 int getClickedVial(const GameState *game);
 UIAction getMenuAction(void);
+UIAction drawCutscene(int page);
 UIAction getGameAction(void);
 UIAction getEndAction(bool won);
 UIAction getRiddleAction(int *selected_answer);
