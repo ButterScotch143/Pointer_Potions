@@ -624,19 +624,27 @@ void drawGameScreen(
     // Header
     DrawText("POINTER POTIONS", 45, 25, 30, UI_GOLD);
 
+    int maxMoves = getLevelMoveLimit(game->level);
+
     char header[128];
 
     snprintf(
         header,
         sizeof(header),
-        "LEVEL %d       MOVES: %d       HINTS: %d       POWER-UPS: %d",
+        "LEVEL %d       MOVES: %d/%d       HINTS: %d       POWER-UPS: %d",
         game->level,
         game->moves_remaining,
+        maxMoves,
         game->hints_remaining,
         game->powerups_remaining
     );
 
-    DrawText(header, 45, 75, 18, CREAM);
+    // Highlight text in soft red when 3 or fewer moves remain
+    Color headerColor = (game->moves_remaining <= 3)
+        ? (Color){235, 76, 91, 255}
+        : CREAM;
+
+    DrawText(header, 45, 75, 18, headerColor);
 
     DrawLine(
         45, 112,
