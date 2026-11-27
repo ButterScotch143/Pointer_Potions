@@ -12,7 +12,7 @@ static const int LEVEL_VIALS[MAX_LEVELS] = {
 };
 
 static const int LEVEL_MOVES[MAX_LEVELS] = {
-    20, 30, 40, 50, 60
+    10, 20, 25, 30, 35
 };
 
 /* SHUFFLE */
