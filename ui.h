@@ -22,6 +22,7 @@ typedef enum {
     UI_RIDDLE_WRONG
 } UIAction;
 
+void selectRandomRiddle(void);
 void drawMainMenu(void);
 void drawInstructions(void);
 void drawGameScreen(const GameState *game, int selected_vial,
