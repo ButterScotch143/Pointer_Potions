@@ -470,6 +470,8 @@ int main(void)
     // Save before closing
     saveGameState(&game, saveFile);
 
+    unloadTitleArt();
+
     CloseWindow();
 
     return 0;

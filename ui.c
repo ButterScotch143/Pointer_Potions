@@ -12,12 +12,23 @@
 #define VIAL_H 190.0f
 #define VIAL_Y 190.0f
 
+static Texture2D titleArt;
+static bool titleArtLoaded = false;
+
 static const Color BG = {18, 16, 35, 255};
 static const Color PANEL = {35, 29, 59, 255};
 static const Color PANEL_LIGHT = {48, 39, 75, 255};
 static const Color UI_GOLD = {239, 190, 91, 255};
 static const Color CREAM = {247, 236, 211, 255};
 static const Color MUTED = {174, 163, 194, 255};
+
+/* -------------------------------------------------
+   FOR IMAGE ASSETS
+------------------------------------------------- */
+void unloadTitleArt(void)
+{
+    if (titleArtLoaded) UnloadTexture(titleArt);
+}
 
 /* -------------------------------------------------
    RIDDLES
@@ -59,14 +70,7 @@ static const Riddle riddles[] = {
         "What goes up but never comes down?",
         {"A balloon", "Smoke", "Your age", "An elevator"},
         2
-    }
-
-   {
-        "What goes up but never comes down?",
-        {"A balloon", "Smoke", "Your age", "An elevator"},
-        2
-    },
-           
+    }, 
     // --- ADD NEW RIDDLES BELOW ---
     {
         "I speak without a mouth and hear without ears. What am I?",
@@ -406,11 +410,28 @@ void drawMainMenu(void)
 {
     drawBackground();
 
-    titleText("THE ALCHEMY LAB | A LIQUID SORTING PUZZLE");
+    if (!titleArtLoaded)
+    {
+        titleArt = LoadTexture("DrawnAssets/TitleArt.png");
+        SetTextureFilter(titleArt, TEXTURE_FILTER_BILINEAR);
+        titleArtLoaded = true;
+    }
+
+    float scale = 0.7f;
+    float artW = titleArt.width * scale;
+    DrawTextureEx(
+        titleArt,
+        (Vector2){ (SCREEN_W - artW) / 2.0f, 12 },
+        0.0f, scale, WHITE
+    );
+
+    const char *sub = "THE ALCHEMY LAB | A LIQUID SORTING PUZZLE";
+    int subW = MeasureText(sub, 19);
+    DrawText(sub, (SCREEN_W - subW) / 2, 190, 19, CREAM);
 
     DrawText(
-        "Sort every potion. Master the art of alchemy.",
-        380, 185, 22, MUTED
+        "Sort every potion. Master the art of alchemy!",
+        380, 215, 22, MUTED
     );
 
     drawPanel((Rectangle){415, 245, 450, 390});
@@ -624,27 +645,19 @@ void drawGameScreen(
     // Header
     DrawText("POINTER POTIONS", 45, 25, 30, UI_GOLD);
 
-    int maxMoves = getLevelMoveLimit(game->level);
-
     char header[128];
 
     snprintf(
         header,
         sizeof(header),
-        "LEVEL %d       MOVES: %d/%d       HINTS: %d       POWER-UPS: %d",
+        "LEVEL %d       MOVES: %d       HINTS: %d       POWER-UPS: %d",
         game->level,
         game->moves_remaining,
-        maxMoves,
         game->hints_remaining,
         game->powerups_remaining
     );
 
-    // Highlight text in soft red when 3 or fewer moves remain
-    Color headerColor = (game->moves_remaining <= 3)
-        ? (Color){235, 76, 91, 255}
-        : CREAM;
-
-    DrawText(header, 45, 75, 18, headerColor);
+    DrawText(header, 45, 75, 18, CREAM);
 
     DrawLine(
         45, 112,

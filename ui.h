@@ -22,6 +22,7 @@ typedef enum {
     UI_RIDDLE_WRONG
 } UIAction;
 
+void unloadTitleArt(void);
 void selectRandomRiddle(void);
 void drawMainMenu(void);
 void drawInstructions(void);
