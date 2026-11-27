@@ -80,15 +80,22 @@ int main(void)
                 animTimer = 0;
 
                 if (makeMove(&game, animFrom, animTo))
-                {
-                    strcpy(message, "Potion transferred!");
-
-                    saveGameState(&game, saveFile);
-
-                    if (game.is_game_over)
                     {
-                        screen = SCREEN_END;
-                    }
+                        strcpy(message, "Potion transferred!");
+
+                        if (game.moves_remaining <= 3) {
+                                SetHostReaction(&gameHost, HOST_WORRIED, "Hurry! Very few moves left!");
+                                } else {
+                                SetHostReaction(&gameHost, HOST_HAPPY, "Great pour!");
+                                }
+
+                        saveGameState(&game, saveFile);
+
+                        if (game.is_game_over)
+                                {
+                                    screen = SCREEN_END;
+                                }
+                        }
                 }
 
                 selectedVial = -1;
