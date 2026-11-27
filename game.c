@@ -7,6 +7,7 @@
 #include "game.h"
 #include "ui.h"
 #include "storage.h"
+#include "host.h"
 
 typedef enum {
     SCREEN_MENU,
