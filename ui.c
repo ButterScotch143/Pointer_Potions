@@ -60,6 +60,39 @@ static const Riddle riddles[] = {
         {"A balloon", "Smoke", "Your age", "An elevator"},
         2
     }
+
+   {
+        "What goes up but never comes down?",
+        {"A balloon", "Smoke", "Your age", "An elevator"},
+        2
+    },
+           
+    // --- ADD NEW RIDDLES BELOW ---
+    {
+        "I speak without a mouth and hear without ears. What am I?",
+        {"An echo", "A ghost", "The wind", "A shadow"},
+        0
+    },
+    {
+        "The more of this there is, the less you see. What is it?",
+        {"Fog", "Darkness", "Smoke", "Light"},
+        1
+    },
+    {
+        "What has cities, but no houses; forests, but no trees; and water, but no fish?",
+        {"A painting", "A dream", "A map", "A globe"},
+        2
+    },
+    {
+        "What can you break, even if you never pick it up or touch it?",
+        {"Glass", "A promise", "Silence", "A record"},
+        1
+    },
+    {
+        "I have branches, but no fruit, trunk, or leaves. What am I?",
+        {"A river", "A bank", "A library", "A family tree"},
+        1
+    }
 };
 
 #define RIDDLE_COUNT (sizeof(riddles) / sizeof(riddles[0]))
