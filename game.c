@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +41,7 @@ int main(void)
     int animTo = -1;
 
     int selectedAnswer = -1;
+    int riddleGuessesLeft = 2;
 
     float animTimer = 0.0f;
     const float animDuration = 0.42f;
@@ -233,20 +233,20 @@ int main(void)
                 {
                     actionHandled = true;
 
-                    if (game.powerups_remaining > 0)
+                        if (game.powerups_remaining > 0)
                     {
-                        selectedAnswer = -1;
-                        riddleFeedback[0] = '\0';
+                    selectedAnswer = -1;
+                    riddleGuessesLeft = 2; // Reset to 2 chances per riddle
+                    riddleFeedback[0] = '\0';
 
-                        selectRandomRiddle();
-
-                        screen = SCREEN_RIDDLE;
+                    selectRandomRiddle();
+                    screen = SCREEN_RIDDLE;
                     }
                     else
                     {
-                        strcpy(message, "No power-ups remaining this level.");
+        strcpy(message, "No more power-ups remaining in this level");
+                        }
                     }
-                }
 
                 // Restart
                 else if (action == UI_RESTART)
@@ -363,16 +363,49 @@ int main(void)
             }
             else if (action == UI_RIDDLE_WRONG)
             {
-                strcpy(riddleFeedback, "Incorrect! Try another answer.");
-            }
+            riddleGuessesLeft--;
+
+                if (riddleGuessesLeft > 0)
+                {
+                    snprintf(
+                riddleFeedback,
+                    sizeof(riddleFeedback),
+                    "Incorrect! You have %d chance left.",
+                    riddleGuessesLeft
+                        );
+                    }
+                    else
+                        {
+                // Failed both chances: consume 1 power-up attempt and return to game
+                game.powerups_remaining--;
+                    saveGameState(&game, saveFile);
+
+                    snprintf(
+                    message,
+                    sizeof(message),
+                    "Riddle failed! No power-up earned (%d attempts left).",
+                    game.powerups_remaining
+                        );
+
+                    selectedAnswer = -1;
+                    screen = SCREEN_GAME;
+                            }
+           }
             else if (action == UI_SKIP_RIDDLE)
-            {
-                strcpy(message, "Riddle skipped.");
+                {
+                game.powerups_remaining--;
+                saveGameState(&game, saveFile);
 
-                selectedAnswer = -1;
+                snprintf(
+                    message,
+                    sizeof(message),
+                    "Riddle abandoned! (%d attempts left)",
+                    game.powerups_remaining
+                );
 
-                screen = SCREEN_GAME;
-            }
+    selectedAnswer = -1;
+    screen = SCREEN_GAME;
+}
         }
 
         // End screen
