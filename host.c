@@ -47,8 +47,23 @@ void DrawHost(const HostActor *host) {
     float drawX = host->position.x;
     float drawY = host->position.y + host->slideInY;
 
-    DrawTexture(hostTextures[host->mood], (int)drawX, (int)drawY, WHITE);
+    Texture2D tex = hostTextures[host->mood];
 
+    if (tex.id > 0) {
+        // Draw your actual wizard PNG once your groupmates upload it
+        DrawTexture(tex, (int)drawX, (int)drawY, WHITE);
+    } else {
+        // Temporary placeholder badge until the PNGs are added to assets/
+        Color badgeColor = (host->mood == HOST_WORRIED) ? (Color){235, 76, 91, 255}
+                         : (host->mood == HOST_HAPPY)   ? (Color){80, 200, 120, 255}
+                         :                                (Color){239, 190, 91, 255};
+
+        DrawCircle((int)drawX + 60, (int)drawY + 75, 50, badgeColor);
+        DrawCircleLines((int)drawX + 60, (int)drawY + 75, 50, WHITE);
+        DrawText("WIZARD", (int)drawX + 26, (int)drawY + 67, 16, (Color){18, 16, 35, 255});
+    }
+
+    // Speech bubble still renders normally!
     if (host->commentDisplayTimer > 0.0f && strlen(host->currentComment) > 0) {
         float bubbleX = drawX + 120.0f;
         float bubbleY = drawY - 60.0f;
